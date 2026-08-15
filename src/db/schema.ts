@@ -14,5 +14,9 @@ export const terms = pgTable("terms", {
   term: text("term").notNull(),
   definitionZh: text("definition_zh").notNull(),
   example: text("example"),
+  phonetic: text("phonetic"),
+  pos: text("pos"),
+  exampleZh: text("example_zh"),
+  sceneNote: text("scene_note"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

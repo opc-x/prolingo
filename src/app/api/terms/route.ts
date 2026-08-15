@@ -10,6 +10,10 @@ export async function GET() {
       term: terms.term,
       definitionZh: terms.definitionZh,
       example: terms.example,
+      phonetic: terms.phonetic,
+      pos: terms.pos,
+      exampleZh: terms.exampleZh,
+      sceneNote: terms.sceneNote,
       domainSlug: domains.slug,
       domainName: domains.name,
     })

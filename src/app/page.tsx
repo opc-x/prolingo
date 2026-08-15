@@ -1,9 +1,17 @@
 import { db } from "@/db";
 import { domains, terms } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { TermForm } from "@/components/TermForm";
+import Link from "next/link";
+import { chunkIntoLessons, termsByDomain } from "@/lib/lessons";
+import type { Term } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+const BADGE = [
+  { glyph: "</>", bg: "bg-cyan-100", fg: "text-cyan-800" },
+  { glyph: "$", bg: "bg-pink-100", fg: "text-pink-800" },
+  { glyph: "★", bg: "bg-neutral-200", fg: "text-neutral-800" },
+];
 
 export default async function Home() {
   const domainList = await db.select().from(domains);
@@ -20,50 +28,41 @@ export default async function Home() {
     .innerJoin(domains, eq(terms.domainId, domains.id))
     .orderBy(terms.createdAt);
 
-  const grouped = domainList.map((d) => ({
-    domain: d,
-    items: rows.filter((r) => r.domainSlug === d.slug),
-  }));
-
   return (
-    <main className="max-w-2xl mx-auto p-8 flex flex-col gap-10">
-      <header>
-        <h1 className="text-2xl font-bold">Prolingo</h1>
-        <p className="text-neutral-500 mt-1">
-          领域英语学习 — 程序员英语、金融英语等垂直场景词汇
-        </p>
-      </header>
+    <main className="px-5 pb-10 pt-8">
+      <h1 className="font-serif text-3xl font-bold">Prolingo</h1>
+      <p className="mt-1 text-sm text-neutral-500">
+        选择领域，按课时刷完专业词汇与场景例句
+      </p>
 
-      <section className="flex flex-col gap-6">
-        {grouped.map(({ domain, items }) => (
-          <div key={domain.slug}>
-            <h2 className="text-lg font-semibold mb-2">{domain.name}</h2>
-            <ul className="flex flex-col gap-2">
-              {items.map((t) => (
-                <li key={t.id} className="border rounded px-3 py-2">
-                  <div className="font-medium">{t.term}</div>
-                  <div className="text-sm text-neutral-600">
-                    {t.definitionZh}
-                  </div>
-                  {t.example && (
-                    <div className="text-sm text-neutral-400 italic mt-1">
-                      {t.example}
-                    </div>
-                  )}
-                </li>
-              ))}
-              {items.length === 0 && (
-                <li className="text-sm text-neutral-400">暂无词条</li>
-              )}
-            </ul>
-          </div>
-        ))}
-      </section>
-
-      <section>
-        <h2 className="text-lg font-semibold mb-3">添加新词条</h2>
-        <TermForm domainList={domainList} />
-      </section>
+      <div className="mt-7 flex flex-col gap-3.5">
+        {domainList.map((d, i) => {
+          const domainTerms = termsByDomain(rows as Term[], d.slug);
+          const lessons = chunkIntoLessons(domainTerms);
+          const badge = BADGE[i % BADGE.length];
+          return (
+            <Link
+              key={d.slug}
+              href={`/domains/${d.slug}`}
+              className="flex items-center gap-4 rounded-xl bg-neutral-50 p-4"
+            >
+              <div className={`flex h-13 w-13 flex-none items-center justify-center rounded-full text-lg font-bold ${badge.bg} ${badge.fg}`} style={{ width: 52, height: 52 }}>
+                {badge.glyph}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-serif text-lg font-bold">{d.name}</div>
+                <div className="text-sm text-neutral-500">
+                  {lessons.length} 课时 · {domainTerms.length} 词
+                </div>
+              </div>
+              <div className="flex-none text-sm text-neutral-400">›</div>
+            </Link>
+          );
+        })}
+        {domainList.length === 0 && (
+          <div className="py-10 text-center text-sm text-neutral-400">暂无领域，先在数据库里 seed 一些</div>
+        )}
+      </div>
     </main>
   );
 }
