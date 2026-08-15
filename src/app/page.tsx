@@ -14,19 +14,21 @@ const BADGE = [
 ];
 
 export default async function Home() {
-  const domainList = await db.select().from(domains);
-  const rows = await db
-    .select({
-      id: terms.id,
-      term: terms.term,
-      definitionZh: terms.definitionZh,
-      example: terms.example,
-      domainName: domains.name,
-      domainSlug: domains.slug,
-    })
-    .from(terms)
-    .innerJoin(domains, eq(terms.domainId, domains.id))
-    .orderBy(terms.createdAt);
+  const [domainList, rows] = await Promise.all([
+    db.select().from(domains),
+    db
+      .select({
+        id: terms.id,
+        term: terms.term,
+        definitionZh: terms.definitionZh,
+        example: terms.example,
+        domainName: domains.name,
+        domainSlug: domains.slug,
+      })
+      .from(terms)
+      .innerJoin(domains, eq(terms.domainId, domains.id))
+      .orderBy(terms.createdAt),
+  ]);
 
   return (
     <main className="px-5 pb-10 pt-8">
